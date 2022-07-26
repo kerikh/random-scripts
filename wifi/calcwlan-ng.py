@@ -21,17 +21,15 @@ if os.getuid() != 0:
 	sys.exit(1)
 
 def crack_comtrend(mac,ssid):
-	head = ssid[len(ssid)-4:len(ssid)].upper()
+	head = ssid[len(ssid)-4:].upper()
 	bssid=re.sub(":","",mac).upper()
 	bssidp=bssid[:8]
-	key = hashlib.md5("bcgbghgg"+bssidp+head+bssid).hexdigest().lower()[:20]
-	return key
+	return hashlib.md5(f"bcgbghgg{bssidp}{head}{bssid}").hexdigest().lower()[:20]
 
 def crack_zyxel(mac,ssid):
-	head = ssid[len(ssid)-4:len(ssid)].lower()
+	head = ssid[len(ssid)-4:].lower()
 	bssidp=re.sub(":","",mac).lower()[:8]
-	key = hashlib.md5(bssidp+head).hexdigest().upper()[:20]
-	return key
+	return hashlib.md5(bssidp+head).hexdigest().upper()[:20]
 
 def get_key(cell):
 	try:
@@ -67,7 +65,7 @@ def get_quality(cell):
 		quality = matching_line(cell,"Quality=").split()[0].split('/')
 	except AttributeError:
 		quality = "0/70"
-	return str(int(round(float(quality[0]) / float(quality[1]) * 100))).rjust(3) + " %"
+	return f"{str(int(round(float(quality[0]) / float(quality[1]) * 100))).rjust(3)} %"
 
 def get_channel(cell):
 	return matching_line(cell,"Channel:")
@@ -82,16 +80,10 @@ def get_encryption(cell):
 			if matching!=None:
 				wpa1=match(matching,"WPA Version ")
 				if wpa1!=None:
-					if enc != "":
-						enc=enc+"+WPA"
-					else:
-						enc="WPA"
+					enc = f"{enc}+WPA" if enc != "" else "WPA"
 				wpa2=match(matching,"IEEE 802.11i/WPA2 Version ")
 				if wpa2!=None:
-					if enc != "":
-						enc=enc+"+WPA2"
-					else:
-						enc="WPA2"
+					enc = f"{enc}+WPA2" if enc != "" else "WPA2"
 		if enc=="":
 			enc="WEP"
 	return enc
@@ -128,10 +120,7 @@ def match(line,keyword):
 	returns the end of that line. Otherwise returns None"""
 	line=line.lstrip()
 	length=len(keyword)
-	if line[:length] == keyword:
-		return line[length:]
-	else:
-		return None
+	return line[length:] if line[:length] == keyword else None
 
 def parse_cell(cell):
 	"""Applies the rules to the bunch of text describing a cell and returns the
@@ -139,7 +128,7 @@ def parse_cell(cell):
 	parsed_cell={}
 	for key in rules:
 		rule=rules[key]
-		parsed_cell.update({key:rule(cell)})
+		parsed_cell[key] = rule(cell)
 	return parsed_cell
 
 

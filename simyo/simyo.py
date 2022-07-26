@@ -30,20 +30,21 @@ USERNAME = ""
 PASSWORD = ""
 
 def getApiSig(url):
-	dig = hmac.new(b'f25a2s1m10', msg='f25a2s1m10' + url.lower(), digestmod=hashlib.sha256).digest()
-	return url + "&apiSig=" + dig.encode('hex')
+	dig = hmac.new(
+		b'f25a2s1m10', msg=f'f25a2s1m10{url.lower()}', digestmod=hashlib.sha256
+	).digest()
+
+	return f"{url}&apiSig=" + dig.encode('hex')
 
 def simyopass():
 	k = pyDes.triple_des("25d1d4cb0a08403e2acbcbe0", pyDes.ECB, "\0\0\0\0\0\0\0\0", pad=None, padmode=pyDes.PAD_PKCS5)
-	d = urllib.quote(base64.b64encode(k.encrypt(PASSWORD)) + '\n')
 	#print "Encrypted: %r" % d
 	#print "Decrypted: %r" % k.decrypt(base64.b64decode(urllib.unquote(d)))
-	return d
+	return urllib.quote(base64.b64encode(k.encrypt(PASSWORD)) + '\n')
 
 def writeFile(filename, content):
-	in_file = open(filename,"wb")
-	in_file.write(content)
-	in_file.close()
+	with open(filename,"wb") as in_file:
+		in_file.write(content)
 
 def convert(data):
 	# http://stackoverflow.com/q/1254454/
@@ -57,7 +58,7 @@ def convert(data):
 		return data
 
 def epoch2date(timestamp, format='%d/%m/%Y'):
-	timestamp = str(timestamp)[0:10]
+	timestamp = str(timestamp)[:10]
 	return datetime.datetime.fromtimestamp(int(timestamp)).strftime(format)
 
 def api_request(url, data="", check=True):
